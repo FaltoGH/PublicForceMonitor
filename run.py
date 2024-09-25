@@ -433,7 +433,10 @@ class CentralWidget(QWidget):
         self.mainwindow.statusbar.showMessage("Downloading data from server...")
         urllib.request.urlretrieve("http://api.motrader.co.kr:25565/data.zip", "data.zip")
         self.mainwindow.statusbar.showMessage("Download done! Extracting zip file...")
-        zipfile.ZipFile("data.zip").extract("data.p")
+        
+        with zipfile.ZipFile("data.zip") as f:
+            f.extract("data.p")
+
         try:
             os.remove("data.zip")
         except:
