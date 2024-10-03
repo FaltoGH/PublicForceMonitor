@@ -1042,21 +1042,27 @@ class CentralWidget(QWidget):
         개인투자자, 외국인투자자, 기관계의 각 평균매수단가 중 가장 비싼 값보다
         그 날의 종가가 더 비싼 주식들을 결과 창에 표시한다.
         """
+
         scoreboard = {}
         for code in self.atad.keys():
             try:
                 arrslice = self.get_slice_for_code(code)
-                maxAvgTradePrc = 0
+                maxAvgBuyPrice = 0
+
                 for i in (0, 1, 2):
-                    maxAvgTradePrc = max(
-                        maxAvgTradePrc, self.atad[code][0][i][0][arrslice][-1]
+                    maxAvgBuyPrice = max(
+                        maxAvgBuyPrice, self.atad[code][0][i][0][arrslice][-1]
                     )
-                lastPrc = list(self.data[code][4].values())[arrslice][-1][0]
+
+                lastClosePrice = list(self.data[code][4].values())[arrslice][-1][0]
+
             except IndexError as e:
                 print(code, e, end="\r")
                 continue
-            if lastPrc > maxAvgTradePrc > 0:
-                scoreboard[code] = (lastPrc / maxAvgTradePrc - 1) * 100
+
+            if lastClosePrice > maxAvgBuyPrice > 0:
+                scoreboard[code] = (lastClosePrice / maxAvgBuyPrice - 1) * 100
+
         self.qcb_autobookmark_check_or_not(scoreboard)
         scoreboard = sorted(scoreboard.items(), key=lambda x: x[1], reverse=True)
         self.scoreboard2list(scoreboard)
@@ -1358,7 +1364,7 @@ class CentralWidget(QWidget):
         investor = self.investor
 
         for key in self.atad.keys():
-            arrslice = self.get_slice_for_code(code)
+            arrslice = self.get_slice_for_code(key)
             array = self.atad[key][2][investor][arrslice]
             directionarray = self.atad[key][3][investor][arrslice]
             if self.qpb_redredred.mode == 0:
