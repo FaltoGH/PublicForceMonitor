@@ -1068,26 +1068,21 @@ class CentralWidget(QWidget):
         self.scoreboard2list(scoreboard)
 
     def qpb_cheapstocks_clicked(self):
-        atad = self.atad
-
         scoreboard = {}
         for code in self.atad.keys():
             if code == "028150":
                 continue  ##
 
-            averagetradeprice = atad[code][0]
-
             try:
                 arrslice = self.get_slice_for_code(code)
-                a = averagetradeprice[0][0][arrslice][-1]
-                b = averagetradeprice[1][0][arrslice][-1]
-                c = averagetradeprice[2][0][arrslice][-1]
-                d = averagetradeprice[0][1][arrslice][-1]
-                e = averagetradeprice[1][1][arrslice][-1]
-                f = averagetradeprice[2][1][arrslice][-1]
-                latestprice, latestvolume = list(self.data[code][4].values())[arrslice][
-                    -1
-                ][0:2]
+                a = self.atad[code][0][0][0][arrslice][-1]
+                b = self.atad[code][0][1][0][arrslice][-1]
+                c = self.atad[code][0][2][0][arrslice][-1]
+                d = self.atad[code][0][0][1][arrslice][-1]
+                e = self.atad[code][0][1][1][arrslice][-1]
+                f = self.atad[code][0][2][1][arrslice][-1]
+                latestprice, latestvolume = list(
+self.data[code][4].values())[arrslice][-1][0:2]
                 if latestvolume == 0:
                     continue
                 lowest = min(a, b, c, d, e, f)
@@ -1095,6 +1090,7 @@ class CentralWidget(QWidget):
             except IndexError as e:
                 print(code, e, end="\r")
                 continue
+
             if score > 0:
                 scoreboard[code] = score * 100
 
