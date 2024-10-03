@@ -371,8 +371,8 @@ class CentralWidget(QWidget):
         self.qpb_importcsv.clicked.connect(self.qpb_importcsv_clicked)
         self.qs_timeleaper.rangeChanged.connect(self.qs_timeleaper_valuechanged)
         self.qdsb_level.returnPressed.connect(self.qdsb_level_returnpressed)
-        for x in ["qpb_analyze_bookmarks", "qpb_export_codelist"]:
-            exec("self.%s.clicked.connect(self.%s_clicked)" % (x, x))
+        self.qpb_analyze_bookmarks.clicked.connect(self.qpb_analyze_bookmarks_clicked)
+        self.qpb_export_codelist.clicked.connect(self.qpb_export_codelist_clicked)
 
     def qpb_addstock2bookmark_clicked(self):
         code = self.crtstockcode
@@ -425,8 +425,9 @@ class CentralWidget(QWidget):
             self.setEnabled(False)
             Thread(target=self.download, daemon=True).start()
 
-    def convertcode2name(self, code):
-        return self.data[code][Constants.K_NAME]
+    def convertcode2name(self, code: str) -> str:
+        """종목코드를 종목명으로 변환"""
+        return self.data[code][8]
 
     def analyze(self):
         self.setEnabled(False)
@@ -655,6 +656,8 @@ class CentralWidget(QWidget):
         self.ql_stockcount.setText(r)
 
     def get_slice_for_code(self, jmcode: str) -> slice:
+        # Do not change this method's signature or name.
+        # This is used in other modules!
         """
         일봉 차트의 전체 길이가 600일봉이 아닌 종목들을 위해
         slice를 재생성해 줍니다.
@@ -1184,77 +1187,53 @@ class CentralWidget(QWidget):
         self.scoreboard2list(scoreboard)
 
     def qdsb_level_returnpressed(self):
-        codenamescorehline = []
+        code_name_score_hline = []
         scoreboard = {}
         level = self.qdsb_level.value()
-        if self.investor == 0:
-            for code in self.atad.keys():
-                try:
-                    arrslice = self.get_slice_for_code(code)
-                    minpower = min(self.atad[code][2][self.investor][arrslice])
-                except ValueError:
-                    continue
-                difference = level - minpower
-                if difference >= 0:
-                    codenamescorehline.append(
-                        [code, self.convertcode2name(code), difference, level]
-                    )
-                    scoreboard[code] = difference
-        else:
-            for code in self.atad.keys():
-                try:
-                    arrslice = self.get_slice_for_code(code)
-                    maxpower = max(self.atad[code][2][self.investor][arrslice])
-                except ValueError:
-                    continue
-                difference = maxpower - level
-                if difference >= 0:
-                    codenamescorehline.append(
-                        [code, self.convertcode2name(code), difference, level]
-                    )
-                    scoreboard[code] = difference
-
+        level: float
+        for code in self.atad.keys():
+            arrslice = self.get_slice_for_code(code)
+            arr_power = self.atad[code][2][self.investor][arrslice]
+            if not arr_power:
+                continue
+            mpower = min(arr_power) if self.investor == 0 else max(arr_power)
+            difference = level - mpower
+            if self.investor != 0:
+                difference *= -1
+            if difference >= 0:
+                code_name_score_hline.append(
+                    [code, self.convertcode2name(code), difference, level]
+                )
+                scoreboard[code] = difference
         self.qcb_autobookmark_check_or_not(scoreboard)
-
-        codenamescorehline = sorted(codenamescorehline, key=lambda x: x[2], reverse=1)
-
-        r = []
-        bookmarked = []
+        code_name_score_hline = sorted(
+            code_name_score_hline, key=lambda x: x[2], reverse=True
+        )
+        list_unbookmarked = []
+        list_bookmarked = []
         self.resultcodelist = []
-        for code, name, score, hline in codenamescorehline:
+        for code, name, score, hline in code_name_score_hline:
             self.resultcodelist.append(code)
             score = round(score, 2)
-            if code in self.bookmarks:
-                row = []
-                for x in [code, name, "", score]:
-                    item = CodeNameDateScoreTableWidgetItem("%s" % x)
-                    item.code = code
-                    item.hline = hline
-                    item.memo = "onlypower"
+            row = []
+            is_bookmarked = code in self.bookmarks
+            for x in [code, name, "", score]:
+                item = CodeNameDateScoreTableWidgetItem("%s" % x)
+                item.code = code
+                item.hline = hline
+                item.memo = "onlypower"
+                if is_bookmarked:
                     item.setBackground(_BOOKMARK_COLOR)
-                    row.append(item)
-                bookmarked.append(row)
-            else:
-                row = []
-                for x in [code, name, "", score]:
-                    item = CodeNameDateScoreTableWidgetItem("%s" % x)
-                    item.code = code
-                    item.hline = hline
-                    item.memo = "onlypower"
-                    row.append(item)
-                r.append(row)
-
-        items = bookmarked + r
-
+                row.append(item)
+            (list_bookmarked if is_bookmarked else list_unbookmarked).append(row)
+        items = list_bookmarked + list_unbookmarked
         self.qlw_stocklist.clearContents()
-        lenitems = len(items)
-        self.qlw_stocklist.setRowCount(lenitems)
-        for x in range(lenitems):
+        self.qlw_stocklist.setRowCount(len(items))
+        for x in range(len(items)):
             for y in range(4):
                 self.qlw_stocklist.setItem(x, y, items[x][y])
         self.qlw_stocklist.resizeRowsToContents()
         self.qlw_stocklist.resizeColumnsToContents()
-
         self.ql_stockcount_showlen()
 
     def qpb_keepbuystocks_clicked(self):
