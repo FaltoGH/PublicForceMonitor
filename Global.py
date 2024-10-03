@@ -7,14 +7,14 @@ import datetime
 import csv
 
 i18n = [
-    "분석자료 만들기",
-    "분석자료 읽기",
-    "종목 북마크",
-    "수익률 상위종목",
-    "수익률 하위종목",
-    "매수 우세 종목",
-    "매도 우세 종목",
-    "세력 스파이크",
+    "분석자료 만들기",  # 0
+    "분석자료 읽기",  # 1
+    "종목 북마크",  # 2
+    "수익률 상위종목",  # 3
+    "수익률 하위종목",  # 4
+    "매수 우세 종목",  # 5
+    "매도 우세 종목",  # 6
+    "세력 스파이크",  # 7
     "최대 거래량",
     "최소 거래량",
     "자동 북마크",
@@ -192,7 +192,7 @@ def keepbuy(arr: list) -> int:
     return ret
 
 
-def keepbuy2(arr:list) -> int:
+def keepbuy2(arr: list) -> int:
     ret = 0
     for i in range(len(arr) - 1):
         if arr[i] < arr[i + 1]:
@@ -200,26 +200,22 @@ def keepbuy2(arr:list) -> int:
     return ret
 
 
-def ignore_too_small_number(x):
+def ignore_too_small_number(x:float) -> float:
     if x < 2:
         return 0
     else:
         return x
 
 
-def crushing(mylist: list):
-    mylist = list(map(ignore_too_small_number, mylist))
-    if len(mylist) < 2:
-        return False, 0
-    _mylist = mylist.copy()
-    mylist_max = max(_mylist)
-    _mylist.remove(mylist_max)
-    mylist_max2 = max(_mylist)
-    try:
-        score = mylist_max / mylist_max2
-    except ZeroDivisionError:
-        score = 0
-    return (score > 2), score
+def crushing(powers: list[float])->float:
+    if len(powers) < 2:
+        return 0
+    powers2 = list(map(ignore_too_small_number, powers))
+    max_power = max(powers2)
+    powers2.remove(max_power)
+    max_power2 = max(powers2)
+    score = max_power / max_power2 if max_power2 > 0 else 0
+    return score
 
 
 def weight(buyrows: list, sellrows: list) -> list:

@@ -63,11 +63,11 @@ from Global import (
     generatenow,
     writeintereststock,
     gen_arrsign,
-    crushing,
     keepbuy,
     keepbuy2,
     parse,
 )
+import Global
 from VolumeButton import VolumeButton
 
 # Disable DeprecationWarning temporarily.
@@ -930,7 +930,7 @@ class CentralWidget(QWidget):
         scoreboard = sorted(scoreboard.items(), key=lambda x: x[1], reverse=reverse)
         self.scoreboard2list(scoreboard)
 
-    def qcb_autobookmark_check_or_not(self, scoreboard:dict)->None:
+    def qcb_autobookmark_check_or_not(self, scoreboard: dict) -> None:
         if self.qcb_autobookmark.isChecked():
             for code in scoreboard.keys():
                 if code not in self.bookmarks:
@@ -1025,16 +1025,20 @@ class CentralWidget(QWidget):
         return None
 
     def qpb_boutique_clicked(self):  # particular stocks
+        """
+        선택한 세력이 갑자기 영향력이 압도적으로 커진 주식을
+        결과 창에 표시한다.
+        """
         scoreboard = {}
         for key, value in self.atad.items():
             arrslice = self.get_slice_for_code(key)
             array = value[2][self.investor][arrslice]
-            tof, score = crushing(array)
-            if tof:
+            score = Global.crushing(array)
+            if score > 2:
                 scoreboard[key] = score
 
         self.qcb_autobookmark_check_or_not(scoreboard)
-        scoreboard = sorted(scoreboard.items(), key=lambda x: x[1], reverse=1)
+        scoreboard = sorted(scoreboard.items(), key=lambda x: x[1], reverse=True)
         self.scoreboard2list(scoreboard)
 
     def qpb_expensivestocks_clicked(self) -> None:  # particular stocks
@@ -1261,8 +1265,7 @@ class CentralWidget(QWidget):
         a = self.qpb_keepsellstocks.a
         self.qpb_keepbuyorsell_clicked(a + 2)
 
-
-    def qpb_keepbuyorsell_clicked(self, a:int)->None:  # particular stocks
+    def qpb_keepbuyorsell_clicked(self, a: int) -> None:  # particular stocks
         """
         최근 20일 중 평균거래단가가 4번 이상 증가/감소한 종목을 표시한다.
         Args:
@@ -1275,10 +1278,10 @@ class CentralWidget(QWidget):
          AssertionError: a is not in (0,1,2,3).
         """
 
-        assert a in (0,1,2,3)
+        assert a in (0, 1, 2, 3)
 
         dict_scoreboard = {}
-        
+
         for code in self.atad.keys():
             arrslice = self.get_slice_for_code(code)
             arr = self.atad[code][0][self.investor][a > 1][arrslice][-20:]
@@ -1287,10 +1290,11 @@ class CentralWidget(QWidget):
             if score >= 4:
                 dict_scoreboard[code] = score
 
-        list_scoreboard = sorted(dict_scoreboard.items(), key=lambda x: x[1], reverse=True)[:400]
+        list_scoreboard = sorted(
+            dict_scoreboard.items(), key=lambda x: x[1], reverse=True
+        )[:400]
         self.qcb_autobookmark_check_or_not(dict_scoreboard)
         self.scoreboard2list(list_scoreboard)
-
 
     def qpb_closestocks_clicked(self):  # particular stocks
         scoreboard = {}
@@ -1437,7 +1441,7 @@ class CentralWidget(QWidget):
                 self, "", f"{nocode}가 데이터에 없으므로 무시되었습니다."
             )
 
-    def scoreboard2list(self, scoreboard:list):
+    def scoreboard2list(self, scoreboard: list):
         """
         Display a given scoreboard on QTableWidget.
         Args:
