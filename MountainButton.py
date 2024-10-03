@@ -1,4 +1,3 @@
-from Global import generate_new_arrslice
 from RightPushButton import RightPushButton
 
 
@@ -22,7 +21,7 @@ class MountainButton(RightPushButton):
 
         for code in atad:
             buy = atad[code][0][nvst][0]
-            arrslice = generate_new_arrslice(buy, centralwidget.arrslice, centralwidget.maxlen)
+            arrslice = centralwidget.get_slice_for_code(code)
             buy = buy[arrslice]
             if len(buy) < 2:
                 continue

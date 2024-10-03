@@ -28,7 +28,6 @@ from PyQt5.QtWidgets import (
     QLabel,
     QLineEdit,
     QListWidget,
-    QMainWindow,
     QMenu,
     QMessageBox,
     QPushButton,
@@ -73,16 +72,17 @@ from VolumeButton import VolumeButton
 
 # Disable DeprecationWarning temporarily.
 # Idea from https://stackoverflow.com/a/50519680
-__2024_0004 = warnings.warn
+_2024_0004 = warnings.warn
 warnings.warn = lambda *args, **kwargs: None
 import mpl_finance
-warnings.warn = __2024_0004
-del __2024_0004
+
+warnings.warn = _2024_0004
+del _2024_0004
 
 _BOOKMARK_COLOR = QColor(0x99FF99)
 
 class CentralWidget(QWidget):
-    def __init__(self, mainwindow, app:QApplication):
+    def __init__(self, mainwindow, app: QApplication):
         super().__init__(mainwindow)
         self.mainwindow = mainwindow
         self.app = app
@@ -94,6 +94,9 @@ class CentralWidget(QWidget):
         self.isatadreceived = False
         self.selecteditem = None
         self.savestackcount = 0
+
+        self.arrslice:slice = slice(0)
+        "Indicates the slice of selected date range."
 
         # try:
         #     self.bookmarks = pickleload('bookmarks.p')
@@ -118,25 +121,31 @@ class CentralWidget(QWidget):
         self.qgb_directsearch = QGroupBox(i18n[15])
         self.q_investor = []
         for invname in [
-    "개인투자자",
-    "외국인투자자",
-    "기관계",
-    "금융투자",
-    "보험",
-    "투신",
-    "기타금융",
-    "은행",
-    "연기금등",
-    "사모펀드",
-    "국가",
-    "기타법인",
-    "내외국인",
-]:
+            "개인투자자",
+            "외국인투자자",
+            "기관계",
+            "금융투자",
+            "보험",
+            "투신",
+            "기타금융",
+            "은행",
+            "연기금등",
+            "사모펀드",
+            "국가",
+            "기타법인",
+            "내외국인",
+        ]:
             self.q_investor.append(QRadioButton(invname))
         self.q_investor[0].setChecked(True)
         self.q_info = []
         for infoname in [
-            "평균거래단가", "보유비중증감", "영향력", "방향", "RS", "Bollinger"]:
+            "평균거래단가",
+            "보유비중증감",
+            "영향력",
+            "방향",
+            "RS",
+            "Bollinger",
+        ]:
             if infoname == "영향력":
                 self.powerbutton = PowerButton("영향력")
                 self.q_info.append(self.powerbutton)
@@ -319,7 +328,7 @@ class CentralWidget(QWidget):
 
         self.qs_timeleaper = QRangeSlider()
         qhbl.addWidget(self.qs_timeleaper)
-        self.ql_timeleaper = QLabel("2000-11-11\n~2001-11-11")
+        self.ql_timeleaper = QLabel("1970-01-02\n~1970-01-03")
         qhbl.addWidget(self.ql_timeleaper)
         a99.addLayout(qhbl, 4, 0, 1, 4)
 
@@ -433,14 +442,12 @@ class CentralWidget(QWidget):
 
             buyrows = list(data[code][Constants.K_BUY].values())
             sellrows = list(data[code][Constants.K_SELL].values())
-            chartrows = list(data[code][Constants.K_CHART].values())
+            chartrows = list(data[code][4].values())
             atad_code = {}
-            atad_code[Constants.L_AVG_TRADE_PRICE] = Util.price(
-                chartrows, buyrows, sellrows
-            )
-            atad_code[Constants.L_HAVING_WEIGHT] = weight(buyrows, sellrows)
-            atad_code[Constants.L_INFLUENCE] = power(buyrows, sellrows)
-            atad_code[Constants.L_DIRECTION] = direction(buyrows, sellrows)
+            atad_code[0] = Util.price(chartrows, buyrows, sellrows)
+            atad_code[1] = weight(buyrows, sellrows)
+            atad_code[2] = power(buyrows, sellrows)
+            atad_code[3] = direction(buyrows, sellrows)
             atad[code] = atad_code
 
             msg = Util.get_progress_msg(index, len(codelist), start_time, code)
@@ -476,7 +483,7 @@ class CentralWidget(QWidget):
         if self.isatadreceived:
             self.startdateint = startvalue
             self.enddateint = endvalue
-            arrdate = list(self.data["005930"][Constants.K_CHART].keys())
+            arrdate = list(self.data["005930"][4].keys())
             lenarrdate = len(arrdate)
             self.qs_timeleaper.setMaximum(lenarrdate - 1)
             startdate0 = arrdate[startvalue]
@@ -517,13 +524,7 @@ class CentralWidget(QWidget):
         completer = QCompleter(self.namelist)
         self.qle_stock.setCompleter(completer)
 
-        try:
-            self.maxlen = len(self.data["005930"][Constants.K_CHART])
-        except:
-            warnings.warn("005930 is not found in data. set maxlen to 600.")
-            self.maxlen = 600
-
-        self.arrslice = slice(0, self.maxlen)
+        self.arrslice = slice(0, 600)
 
         self.isatadreceived = True
 
@@ -585,7 +586,7 @@ class CentralWidget(QWidget):
                 filedir = f"{Constants.SAVEDIR}\\{filename}.csv"
                 writeintereststock(filedir, code100)
             QMessageBox.information(
-                self, "", f"{len(codes)}개의 북마크한 종목을 저장하였습니다."
+                self, "", f"{len(codes)}개의 북마크한 종목을 저장했습니다."
             )
 
     def qpb_export_codelist_clicked(self):
@@ -595,7 +596,7 @@ class CentralWidget(QWidget):
 
         codelist = self.bookmarks
         filename, answer = QInputDialog.getText(
-            self, "QInputDialog", "어떤 파일명으로 저장할건가?"
+            self, "QInputDialog", "어떤 파일명으로 저장할 건가요?"
         )
         if not answer:
             return
@@ -603,7 +604,7 @@ class CentralWidget(QWidget):
         filedir = f"{Constants.SAVEDIR}\\{filename}.csv"
         writeintereststock(filedir, codelist)
         QMessageBox.information(
-            self, "", f"{len(codelist)}개의 북마크한 종목을 저장하였다."
+            self, "", f"{len(codelist)}개의 북마크한 종목을 저장했습니다."
         )
 
     def qlw_bookmarks_currentItemChanged(self):
@@ -652,6 +653,13 @@ class CentralWidget(QWidget):
         r = f"{a0} results" if a0 >= 2 else f"{a0} result"
         self.ql_stockcount.setText(r)
 
+    def get_slice_for_code(self, jmcode:str)->slice:
+        """
+        일봉 차트의 전체 길이가 600일봉이 아닌 종목들을 위해
+        slice를 재생성해 줍니다.
+        """
+        return generate_new_arrslice(len(self.data[jmcode][4]),self.arrslice)
+
     def qpb_drawchart_clicked2(self):  # GUI에 차트를 그리는 유일무이한 함수
         investor = self.investor
         info = self.info
@@ -666,8 +674,9 @@ class CentralWidget(QWidget):
         self.drawchart(self.data[code][4], self.ax)
         self.ax.set_title(f"{self.data[code][8]} ({code})")
 
-        arrslice = generate_new_arrslice(self.data[code][4], self.arrslice, self.maxlen)
+        arrslice = self.get_slice_for_code(code)
 
+        # 평균거래단가
         if info == 0:
             self.ax2.axis("off")
             buyarray = self.atad[code][0][investor][0]
@@ -678,6 +687,7 @@ class CentralWidget(QWidget):
             self.ax.get_lines()[1].set_color("blue")
             self.ax.grid()
 
+        # 보유비중증감
         elif info == 1:
             self.ax2.axis("on")
             array = self.atad[code][1][investor]
@@ -687,6 +697,7 @@ class CentralWidget(QWidget):
             self.ax2.set_ylabel("%")
             self.ax.grid()
 
+        # 영향력
         elif info == 2:
             self.ax2.axis("on")
             array = self.atad[code][2][investor]
@@ -726,6 +737,7 @@ class CentralWidget(QWidget):
                     color, alpha = "blue", 0.5
                 self.ax2.fill_between(x, y, alpha=alpha, color=color)
 
+        # 방향
         elif info == 3:
             self.ax2.axis("on")
             array = self.atad[code][3][investor]
@@ -734,6 +746,7 @@ class CentralWidget(QWidget):
             self.ax2.set_ylabel("%")
             self.ax.grid()
 
+        # RS
         elif info == 4:
             self.ax2.axis("on")
             chartrows = list(self.data[code][4].values())
@@ -756,6 +769,7 @@ class CentralWidget(QWidget):
             self.ax2.set_ylabel("%")
             self.ax.grid()
 
+        # Bollinger
         elif info == 5:
             self.ax2.axis("on")
             self.ax.grid()
@@ -857,9 +871,7 @@ class CentralWidget(QWidget):
         if info == 0:
             for code in self.atad.keys():
                 try:
-                    arrslice = generate_new_arrslice(
-                        self.data[code][Constants.K_CHART], self.arrslice, self.maxlen
-                    )
+                    arrslice = self.get_slice_for_code(code)
                     start = self.atad[code][0][investor][0][arrslice][0]
                     last = self.atad[code][0][investor][0][arrslice][-1]
                     scoreboard[code] = (last / start - 1) * 100 if start != 0 else 0
@@ -869,9 +881,7 @@ class CentralWidget(QWidget):
         elif info == 1:
             for code in self.atad.keys():
                 try:
-                    arrslice = generate_new_arrslice(
-                        self.data[code][Constants.K_CHART], self.arrslice, self.maxlen
-                    )
+                    arrslice = self.get_slice_for_code(code)
                     array = self.atad[code][1][investor]
                     stock = self.data[code][7]
                     array = [x / (stock * 10) for x in array]
@@ -883,9 +893,7 @@ class CentralWidget(QWidget):
 
         elif info == 2:
             for code in self.atad.keys():
-                arrslice = generate_new_arrslice(
-                    self.data[code][Constants.K_CHART], self.arrslice, self.maxlen
-                )
+                arrslice = self.get_slice_for_code(code)
                 array = self.atad[code][2][investor][arrslice]
                 if self.powerbutton.mode == 0:
                     try:
@@ -913,9 +921,7 @@ class CentralWidget(QWidget):
         else:
             for code in self.atad.keys():
                 try:
-                    arrslice = generate_new_arrslice(
-                        self.data[code][Constants.K_CHART], self.arrslice, self.maxlen
-                    )
+                    arrslice = self.get_slice_for_code(code)
                     scoreboard[code] = self.atad[code][info][investor][arrslice][-1]
                 except IndexError:
                     continue
@@ -934,9 +940,7 @@ class CentralWidget(QWidget):
         scoreboard = {}
         for key, value in self.atad.items():
             try:
-                arrslice = generate_new_arrslice(
-                    self.data[key][Constants.K_CHART], self.arrslice, self.maxlen
-                )
+                arrslice = self.get_slice_for_code(key)
                 yesterday = value[0][self.investor][0][arrslice][-2]
             except IndexError as e:
                 print(696, key, e, end="\r")
@@ -963,10 +967,8 @@ class CentralWidget(QWidget):
 
         codenamedatescoreindexprice = []
         for key, value in self.data.items():
-            arrslice = generate_new_arrslice(
-                self.data[key][Constants.K_CHART], self.arrslice, self.maxlen
-            )
-            chartrows = list(value[Constants.K_CHART].values())[arrslice]
+            arrslice = self.get_slice_for_code(key)
+            chartrows = list(value[4].values())[arrslice]
             if len(chartrows) < 20:
                 continue
             arrsign = gen_arrsign(chartrows)
@@ -974,8 +976,8 @@ class CentralWidget(QWidget):
                 index = sign[0]
                 price = chartrows[index][0]
                 code = key
-                name = value[Constants.K_NAME]
-                date = list(value[Constants.K_CHART].keys())[arrslice][index]
+                name = value[8]
+                date = list(value[4].keys())[arrslice][index]
                 score = sign[1]
                 score = round(score, 2)
                 codenamedatescoreindexprice.append(
@@ -1024,9 +1026,7 @@ class CentralWidget(QWidget):
     def qpb_boutique_clicked(self):  # particular stocks
         scoreboard = {}
         for key, value in self.atad.items():
-            arrslice = generate_new_arrslice(
-                self.data[key][Constants.K_CHART], self.arrslice, self.maxlen
-            )
+            arrslice = self.get_slice_for_code(key)
             array = value[2][self.investor][arrslice]
             tof, score = crushing(array)
             if tof:
@@ -1045,9 +1045,7 @@ class CentralWidget(QWidget):
         scoreboard = {}
         for code in self.atad.keys():
             try:
-                arrslice = generate_new_arrslice(
-                    self.data[code][4], self.arrslice, self.maxlen
-                )
+                arrslice = self.get_slice_for_code(code)
                 maxAvgTradePrc = 0
                 for i in (0, 1, 2):
                     maxAvgTradePrc = max(
@@ -1074,9 +1072,7 @@ class CentralWidget(QWidget):
             averagetradeprice = atad[code][0]
 
             try:
-                arrslice = generate_new_arrslice(
-                    self.data[code][4], self.arrslice, self.maxlen
-                )
+                arrslice = self.get_slice_for_code(code)
                 a = averagetradeprice[0][0][arrslice][-1]
                 b = averagetradeprice[1][0][arrslice][-1]
                 c = averagetradeprice[2][0][arrslice][-1]
@@ -1110,9 +1106,7 @@ class CentralWidget(QWidget):
         buyorsell = self.qpb_dipperstocks.buyorsell
 
         for code in self.atad.keys():
-            arrslice = generate_new_arrslice(
-                self.data[code][4], self.arrslice, self.maxlen
-            )
+            arrslice = self.get_slice_for_code(code)
             array = self.atad[code][0][nvst][buyorsell][arrslice]
             a = self.finddipper(array)
             if a:
@@ -1129,9 +1123,7 @@ class CentralWidget(QWidget):
         nvst = self.investor
 
         for code in self.atad.keys():
-            arrslice = generate_new_arrslice(
-                self.data[code][4], self.arrslice, self.maxlen
-            )
+            arrslice = self.get_slice_for_code(code)
             array2 = self.atad[code][1][nvst][arrslice]
             if len(array2) < 6:
                 continue
@@ -1155,9 +1147,7 @@ class CentralWidget(QWidget):
         scoreboard = {}
         if self.qpb_crossstocks.mode == 0:
             for code in self.atad.keys():
-                arrslice = generate_new_arrslice(
-                    self.data[code][4], self.arrslice, self.maxlen
-                )
+                arrslice = self.get_slice_for_code(code)
                 barray = self.atad[code][0][self.investor][0][arrslice]
                 sarray = self.atad[code][0][self.investor][1][arrslice]
                 if not (len(barray) >= 2 and len(sarray) >= 2):
@@ -1169,9 +1159,7 @@ class CentralWidget(QWidget):
                     scoreboard[code] = (barray[-1] / barray[-2] - 1) * 100
         else:
             for code in self.atad.keys():
-                arrslice = generate_new_arrslice(
-                    self.data[code][4], self.arrslice, self.maxlen
-                )
+                arrslice = self.get_slice_for_code(code)
                 barray = self.atad[code][0][self.investor][0][arrslice]
                 sarray = self.atad[code][0][self.investor][1][arrslice]
                 if not (len(barray) >= 2 and len(sarray) >= 2):
@@ -1194,9 +1182,7 @@ class CentralWidget(QWidget):
         if self.investor == 0:
             for code in self.atad.keys():
                 try:
-                    arrslice = generate_new_arrslice(
-                        self.data[code][4], self.arrslice, self.maxlen
-                    )
+                    arrslice = self.get_slice_for_code(code)
                     minpower = min(self.atad[code][2][self.investor][arrslice])
                 except ValueError:
                     continue
@@ -1209,9 +1195,7 @@ class CentralWidget(QWidget):
         else:
             for code in self.atad.keys():
                 try:
-                    arrslice = generate_new_arrslice(
-                        self.data[code][4], self.arrslice, self.maxlen
-                    )
+                    arrslice = self.get_slice_for_code(code)
                     maxpower = max(self.atad[code][2][self.investor][arrslice])
                 except ValueError:
                     continue
@@ -1280,36 +1264,28 @@ class CentralWidget(QWidget):
 
         if a == 0:
             for code in self.atad.keys():
-                arrslice = generate_new_arrslice(
-                    self.data[code][4], self.arrslice, self.maxlen
-                )
+                arrslice = self.get_slice_for_code(code)
                 arr = self.atad[code][0][nvst][0][arrslice][-20:]
                 score = keepbuy(arr)
                 if score >= 4:
                     scoreboard[code] = score
         elif a == 1:
             for code in self.atad.keys():
-                arrslice = generate_new_arrslice(
-                    self.data[code][4], self.arrslice, self.maxlen
-                )
+                arrslice = self.get_slice_for_code(code)
                 arr = self.atad[code][0][nvst][0][arrslice][-20:]
                 score = keepbuy2(arr)
                 if score >= 4:
                     scoreboard[code] = score
         elif a == 2:
             for code in self.atad.keys():
-                arrslice = generate_new_arrslice(
-                    self.data[code][4], self.arrslice, self.maxlen
-                )
+                arrslice = self.get_slice_for_code(code)
                 arr = self.atad[code][0][nvst][1][arrslice][-20:]
                 score = keepbuy(arr)
                 if score >= 4:
                     scoreboard[code] = score
         elif a == 3:
             for code in self.atad.keys():
-                arrslice = generate_new_arrslice(
-                    self.data[code][4], self.arrslice, self.maxlen
-                )
+                arrslice = self.get_slice_for_code(code)
                 arr = self.atad[code][0][nvst][1][arrslice][-20:]
                 score = keepbuy2(arr)
                 if score >= 4:
@@ -1329,9 +1305,7 @@ class CentralWidget(QWidget):
 
         if self.arrslice.start == 0:
             for code in self.atad:
-                arrslice = generate_new_arrslice(
-                    self.data[code][4], self.arrslice, self.maxlen
-                )
+                arrslice = self.get_slice_for_code(code)
                 try:
                     마지막날매수 = self.atad[code][0][nvst][0][arrslice][-1]
                     마지막날매도 = self.atad[code][0][nvst][1][arrslice][-1]
@@ -1351,9 +1325,7 @@ class CentralWidget(QWidget):
                     scoreboard[code] = -b * 100
         else:
             for code in self.atad:
-                arrslice = generate_new_arrslice(
-                    self.data[code][4], self.arrslice, self.maxlen
-                )
+                arrslice = self.get_slice_for_code(code)
                 b = 0 if self.qpb_closestocks.a == 0 else 1
                 arr = self.atad[code][0][nvst][b][arrslice]
                 try:
@@ -1386,9 +1358,7 @@ class CentralWidget(QWidget):
         investor = self.investor
 
         for key in self.atad.keys():
-            arrslice = generate_new_arrslice(
-                self.data[key][4], self.arrslice, self.maxlen
-            )
+            arrslice = self.get_slice_for_code(code)
             array = self.atad[key][2][investor][arrslice]
             directionarray = self.atad[key][3][investor][arrslice]
             if self.qpb_redredred.mode == 0:

@@ -38,10 +38,15 @@ i18n = [
     "데이터 다운로드",
 ]
 
-def generate_new_arrslice(arr: list, arrslice: slice, maxlen: int) -> slice:
-    if len(arr) == maxlen:
+def generate_new_arrslice(length: int, arrslice: slice) -> slice:
+    """
+    # params
+    length: Length of array, typically the number of chart candle days.
+    arrslice: The slice which respects to 600 days.
+    """
+    if length == 600:
         return arrslice
-    difference = maxlen - len(arr)
+    difference = 600 - length
     return slice(
         max(arrslice.start - difference, 0), max(arrslice.stop - difference, 1)
     )

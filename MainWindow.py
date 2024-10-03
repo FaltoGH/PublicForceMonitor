@@ -31,7 +31,7 @@ class MainWindow(QMainWindow):
     def __init__(self, app:QApplication):
         super().__init__()
         self.statusbar = self.statusBar()
-        self.setWindowTitle("세력모니터 240922")
+        self.setWindowTitle("세력모니터 1.2")
         self.setGeometry(99, 99, 99, 99)
         self.centralwidget = CentralWidget(self, app)
         self.setCentralWidget(self.centralwidget)
