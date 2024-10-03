@@ -81,6 +81,7 @@ del _2024_0004
 
 _BOOKMARK_COLOR = QColor(0x99FF99)
 
+
 class CentralWidget(QWidget):
     def __init__(self, mainwindow, app: QApplication):
         super().__init__(mainwindow)
@@ -95,7 +96,7 @@ class CentralWidget(QWidget):
         self.selecteditem = None
         self.savestackcount = 0
 
-        self.arrslice:slice = slice(0)
+        self.arrslice: slice = slice(0)
         "Indicates the slice of selected date range."
 
         # try:
@@ -653,12 +654,12 @@ class CentralWidget(QWidget):
         r = f"{a0} results" if a0 >= 2 else f"{a0} result"
         self.ql_stockcount.setText(r)
 
-    def get_slice_for_code(self, jmcode:str)->slice:
+    def get_slice_for_code(self, jmcode: str) -> slice:
         """
         일봉 차트의 전체 길이가 600일봉이 아닌 종목들을 위해
         slice를 재생성해 줍니다.
         """
-        return generate_new_arrslice(len(self.data[jmcode][4]),self.arrslice)
+        return generate_new_arrslice(len(self.data[jmcode][4]), self.arrslice)
 
     def qpb_drawchart_clicked2(self):  # GUI에 차트를 그리는 유일무이한 함수
         investor = self.investor
@@ -929,7 +930,7 @@ class CentralWidget(QWidget):
         scoreboard = sorted(scoreboard.items(), key=lambda x: x[1], reverse=reverse)
         self.scoreboard2list(scoreboard)
 
-    def qcb_autobookmark_check_or_not(self, scoreboard):
+    def qcb_autobookmark_check_or_not(self, scoreboard:dict)->None:
         if self.qcb_autobookmark.isChecked():
             for code in scoreboard.keys():
                 if code not in self.bookmarks:
@@ -1081,8 +1082,9 @@ class CentralWidget(QWidget):
                 d = self.atad[code][0][0][1][arrslice][-1]
                 e = self.atad[code][0][1][1][arrslice][-1]
                 f = self.atad[code][0][2][1][arrslice][-1]
-                latestprice, latestvolume = list(
-self.data[code][4].values())[arrslice][-1][0:2]
+                latestprice, latestvolume = list(self.data[code][4].values())[arrslice][
+                    -1
+                ][0:2]
                 if latestvolume == 0:
                     continue
                 lowest = min(a, b, c, d, e, f)
@@ -1259,46 +1261,36 @@ self.data[code][4].values())[arrslice][-1][0:2]
         a = self.qpb_keepsellstocks.a
         self.qpb_keepbuyorsell_clicked(a + 2)
 
-    def qpb_keepbuyorsell_clicked(self, a):  # particular stocks
-        nvst = self.investor
 
-        scoreboard = {}
+    def qpb_keepbuyorsell_clicked(self, a:int)->None:  # particular stocks
+        """
+        최근 20일 중 평균거래단가가 4번 이상 증가/감소한 종목을 표시한다.
+        Args:
+         a:
+          - 0: Keepbuy Stocks ▼
+          - 1: Keepbuy Stocks ▲
+          - 2: Keepsell Stocks ▼
+          - 3: Keepsell Stocks ▲
+        Raises:
+         AssertionError: a is not in (0,1,2,3).
+        """
 
-        if a == 0:
-            for code in self.atad.keys():
-                arrslice = self.get_slice_for_code(code)
-                arr = self.atad[code][0][nvst][0][arrslice][-20:]
-                score = keepbuy(arr)
-                if score >= 4:
-                    scoreboard[code] = score
-        elif a == 1:
-            for code in self.atad.keys():
-                arrslice = self.get_slice_for_code(code)
-                arr = self.atad[code][0][nvst][0][arrslice][-20:]
-                score = keepbuy2(arr)
-                if score >= 4:
-                    scoreboard[code] = score
-        elif a == 2:
-            for code in self.atad.keys():
-                arrslice = self.get_slice_for_code(code)
-                arr = self.atad[code][0][nvst][1][arrslice][-20:]
-                score = keepbuy(arr)
-                if score >= 4:
-                    scoreboard[code] = score
-        elif a == 3:
-            for code in self.atad.keys():
-                arrslice = self.get_slice_for_code(code)
-                arr = self.atad[code][0][nvst][1][arrslice][-20:]
-                score = keepbuy2(arr)
-                if score >= 4:
-                    scoreboard[code] = score
+        assert a in (0,1,2,3)
 
-        scoreboard = sorted(scoreboard.items(), key=lambda x: x[1], reverse=1)[:400]
+        dict_scoreboard = {}
+        
+        for code in self.atad.keys():
+            arrslice = self.get_slice_for_code(code)
+            arr = self.atad[code][0][self.investor][a > 1][arrslice][-20:]
+            score = keepbuy(arr) if a % 2 == 0 else keepbuy2(arr)
 
-        scoreboard_dict = {x: y for x, y in scoreboard}
-        self.qcb_autobookmark_check_or_not(scoreboard_dict)
+            if score >= 4:
+                dict_scoreboard[code] = score
 
-        self.scoreboard2list(scoreboard)
+        list_scoreboard = sorted(dict_scoreboard.items(), key=lambda x: x[1], reverse=True)[:400]
+        self.qcb_autobookmark_check_or_not(dict_scoreboard)
+        self.scoreboard2list(list_scoreboard)
+
 
     def qpb_closestocks_clicked(self):  # particular stocks
         scoreboard = {}
@@ -1445,7 +1437,15 @@ self.data[code][4].values())[arrslice][-1][0:2]
                 self, "", f"{nocode}가 데이터에 없으므로 무시되었습니다."
             )
 
-    def scoreboard2list(self, scoreboard):
+    def scoreboard2list(self, scoreboard:list):
+        """
+        Display a given scoreboard on QTableWidget.
+        Args:
+         scoreboard:
+          Type is list.
+          [(code1,score1),(code2,score2),...]
+          code is str. score is int or float.
+        """
         r = []
         bookmarked = []
         self.resultcodelist = []

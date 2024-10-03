@@ -38,6 +38,7 @@ i18n = [
     "데이터 다운로드",
 ]
 
+
 def generate_new_arrslice(length: int, arrslice: slice) -> slice:
     """
     # params
@@ -51,7 +52,8 @@ def generate_new_arrslice(length: int, arrslice: slice) -> slice:
         max(arrslice.start - difference, 0), max(arrslice.stop - difference, 1)
     )
 
-def get_typical_price(chartrow:list)->float:
+
+def get_typical_price(chartrow: list) -> float:
     """
     chartrow: [c, v, vm, o, h, l]
     https://en.wikipedia.org/wiki/Typical_price
@@ -63,7 +65,8 @@ def get_typical_price(chartrow:list)->float:
     tPrice /= 3
     return tPrice
 
-def gen_lbb(arrprice:list):
+
+def gen_lbb(arrprice: list):
     """
     # arguments
     - arrprice
@@ -76,28 +79,30 @@ def gen_lbb(arrprice:list):
     ma20 = sum(arrprice) / 20
     squares = []
     for price in arrprice:
-        squares.append((price - ma20)** 2)
+        squares.append((price - ma20) ** 2)
     variance = sum(squares) / 20
-    standard_deviation = variance ** 0.5
+    standard_deviation = variance**0.5
     lbb = ma20 - 2 * standard_deviation
     return lbb
 
-def gen_arrlbb(arrprice:list):
+
+def gen_arrlbb(arrprice: list):
     """
     # arguments
     - arrprice
       - len(arrprice) >= 20
-    
+
     # returns
     Lower Bollinger Band list of length len(arrprice)-19.
     """
     arrlbb = []
     for i in range(len(arrprice) - 19):
-        lbb = gen_lbb(arrprice[i:i+20])
+        lbb = gen_lbb(arrprice[i : i + 20])
         arrlbb.append(lbb)
     return arrlbb
 
-def gen_arrsign(chartrows:list)->list:
+
+def gen_arrsign(chartrows: list) -> list:
     """
     # arguments
     - chartrows
@@ -120,10 +125,12 @@ def gen_arrsign(chartrows:list)->list:
         openp = chartrow[3]
         low = chartrow[5]
         # 종가가 min(LBB,시가)보다 작으면
-        if close < min(LBBs[index],openp):
-            for index2, chartrow2 in enumerate(chartrows[absIndex+1:]):
+        if close < min(LBBs[index], openp):
+            for index2, chartrow2 in enumerate(chartrows[absIndex + 1 :]):
                 # 고가가 기준저가 이상이면서 종가가 min(시가-1,LBB)보다 크면
-                if chartrow2[4] >= low and chartrow2[0] > min(chartrow2[3]-1,LBBs[index+index2+1]):
+                if chartrow2[4] >= low and chartrow2[0] > min(
+                    chartrow2[3] - 1, LBBs[index + index2 + 1]
+                ):
                     break
             else:
                 arrsign.append((absIndex, (close / lastClosePrice - 1) * 100))
@@ -174,11 +181,10 @@ def writeintereststock(filedir, codelist):
 
 
 def generatenow():
-    r = datetime.datetime.now().strftime("%H%M%S")
-    return r
+    return datetime.datetime.now().strftime("%H%M%S")
 
 
-def keepbuy(arr):
+def keepbuy(arr: list) -> int:
     ret = 0
     for i in range(len(arr) - 1):
         if arr[i] > arr[i + 1]:
@@ -186,7 +192,7 @@ def keepbuy(arr):
     return ret
 
 
-def keepbuy2(arr):
+def keepbuy2(arr:list) -> int:
     ret = 0
     for i in range(len(arr) - 1):
         if arr[i] < arr[i + 1]:
@@ -216,7 +222,7 @@ def crushing(mylist: list):
     return (score > 2), score
 
 
-def weight(buyrows:list, sellrows:list) -> list:
+def weight(buyrows: list, sellrows: list) -> list:
     """
     보유비중
     """
@@ -230,40 +236,44 @@ def weight(buyrows:list, sellrows:list) -> list:
         ret.append(array)
     return ret
 
-def power(buyrows:list, sellrows:list)->list:
+
+def power(buyrows: list, sellrows: list) -> list:
     """
     영향력 (atad[code][2])
-    
+
     # returns
     Type is list.
     Element type is float.
     Dimension is (F,N).
     """
-# data[code][5]
-# data[code][6]
-# - type: dict
-# - key type: str
-# - key: yyyyMMdd
-# - It is sorted by ascending order.
-# - value type: list
-# - value: [현재가, 대비기호, 전일대비, 등락율, 누적거래량,
-# 누적거래대금, 개인투자자, 외국인투자자, 기관계, 금융투자,
-# 보험, 투신, 기타금융, 은행, 연기금등,
-# 사모펀드, 국가, 기타법인, 내외국인]
-# Length is 19.
-# buyrows, sellrows: Type is int. Demension is (600,19).
+    # data[code][5]
+    # data[code][6]
+    # - type: dict
+    # - key type: str
+    # - key: yyyyMMdd
+    # - It is sorted by ascending order.
+    # - value type: list
+    # - value: [현재가, 대비기호, 전일대비, 등락율, 누적거래량,
+    # 누적거래대금, 개인투자자, 외국인투자자, 기관계, 금융투자,
+    # 보험, 투신, 기타금융, 은행, 연기금등,
+    # 사모펀드, 국가, 기타법인, 내외국인]
+    # Length is 19.
+    # buyrows, sellrows: Type is int. Demension is (600,19).
     ret = []
-    N=len(buyrows)
+    N = len(buyrows)
     for F in range(6, 19):
         buy = [buyrow[F] for buyrow in buyrows]
         sell = [abs(sellrow[F]) for sellrow in sellrows]
         buysell = [buy[i] + sell[i] for i in range(N)]
         volumex2 = [buyrow[4] * 2 for buyrow in buyrows]
-        powe = [buysell[i] / volumex2[i] * 100 if volumex2[i] != 0 else 0 for i in range(N)]
+        powe = [
+            buysell[i] / volumex2[i] * 100 if volumex2[i] != 0 else 0 for i in range(N)
+        ]
         ret.append(powe)
     return ret
 
-def direction(buyrows:list, sellrows:list)->list:
+
+def direction(buyrows: list, sellrows: list) -> list:
     """
     방향 (atad[code][3])
 
@@ -273,12 +283,14 @@ def direction(buyrows:list, sellrows:list)->list:
     Dimension is (F,N).
     """
     ret = []
-    N=len(buyrows)
+    N = len(buyrows)
     for F in range(6, 19):
         buy = [buyrow[F] for buyrow in buyrows]
         sell = [sellrow[F] for sellrow in sellrows]
         buysell = [buy[i] + abs(sell[i]) for i in range(N)]
         netbuy = [buy[i] + sell[i] for i in range(N)]
-        directio = [netbuy[i] / buysell[i] * 100 if buysell[i] != 0 else 0 for i in range(N)]
+        directio = [
+            netbuy[i] / buysell[i] * 100 if buysell[i] != 0 else 0 for i in range(N)
+        ]
         ret.append(directio)
     return ret
