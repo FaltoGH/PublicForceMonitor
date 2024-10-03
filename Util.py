@@ -84,74 +84,69 @@ class Util:
             for index, x in enumerate(mylist):
                 if x == 0:
                     mylist[index] = a
-                    
+
+    @staticmethod                    
     def price(chartrows:list, buyrows:list, sellrows:list)->list:
         """
-        평균거래단가를 계산하고 (13,2,N) float list를 반환합니다.
-        (13,[0],N)은 평균매수단가, (13,[1],N)은 평균매도단가입니다.
-        """
+data[code][5]
+data[code][6]
+- type: dict
+- key type: str
+- key: yyyyMMdd
+- It is sorted by ascending order.
+- value type: list
+- value: [현재가, 대비기호, 전일대비, 등락율, 누적거래량,
+누적거래대금, 개인투자자, 외국인투자자, 기관계, 금융투자,
+보험, 투신, 기타금융, 은행, 연기금등,
+사모펀드, 국가, 기타법인, 내외국인]
+Length is 19.
 
+data[code][4]
+- type: dict
+- key type: str
+- key: yyyyMMdd
+- It is sorted by ascending order.
+- value type: list
+- value: [c,v,m,o,h,l]
+They are all non-negative integers.
+
+# params
+buyrows, sellrows: Type is int. Demension is (600,19).
+chartrows: Type is int. Demension is (600,6).
+This function calculates avgTradePrice.
+Type is float. Demension is (13,2,600).
+
+# returns
+returns avgTradePrices.
+(13,[0],600) is buy.
+(13,[1],600) is sell.
+"""
         ret = []
-
-        for nvst in range(6, 19):
-
-            meanbuyprice = []
-            meansellprice = []
-            sumbuypv, sumbuyv, sumsellpv, sumsellv = 0, 0, 0, 0
-
+        for F in range(6,19):
+            avgBuyPrices = []
+            avgSellPrices = []
+            buyMoney=0
+            buyVolume=0
+            sellMoney=0
+            sellVolume=0
             for i in range(len(buyrows)):
-                assert buyrows[i][nvst]>=0
-                assert sellrows[i][nvst]<=0
-
-                # 순매수
-                netbuy = buyrows[i][nvst] + sellrows[i][nvst]
-                netbuy:int
-
-                # 거래대금
-                pv = abs(chartrows[i][Constants.IDX_81_CLOSE]) * netbuy
-                pv:int
-
-                if pv > 0:
-                    sumbuyv += netbuy
-                    sumbuypv += pv
-                elif pv < 0:
-                    sumsellv += netbuy
-                    sumsellpv += pv
-
-                abuyp = sumbuypv / sumbuyv if sumbuyv != 0 else 0
-                asellp = sumsellpv / sumsellv if sumsellv != 0 else 0
-
-                assert abuyp >= 0
-                assert asellp >= 0
-
-                meanbuyprice.append(abuyp)
-                meansellprice.append(asellp)
-
-            Util.adjust0(meanbuyprice)
-            Util.adjust0(meansellprice)
-
-            assert len(meanbuyprice) == len(buyrows)
-            ret.append([meanbuyprice, meansellprice])
-
-        #19-6=13, the number of investors
-        assert len(ret) == 13 
-
+                netbuy = buyrows[i][F] + sellrows[i][F]
+                close=chartrows[i][0]
+                money = abs(close) * netbuy
+                if netbuy > 0:
+                    buyVolume += netbuy
+                    buyMoney += money
+                elif netbuy < 0:
+                    sellVolume += netbuy
+                    sellMoney += money
+                avgBuyPrice = buyMoney / buyVolume if buyVolume != 0 else 0
+                avgSellPrice = sellMoney / sellVolume if sellVolume != 0 else 0
+                avgBuyPrices.append(avgBuyPrice)
+                avgSellPrices.append(avgSellPrice)
+            Util.adjust0(avgBuyPrices)
+            Util.adjust0(avgSellPrices)
+            ret.append([avgBuyPrices, avgSellPrices])
         return ret
     
     def float2time(f:float) -> str:
         return datetime.datetime.fromtimestamp(f).strftime('%Y-%m-%d %H:%M:%S')
-
-    def get_existing_kiwoom_data_downloaded_before()->dict:
-        """
-        이전에 다운로드받아놓은 데이터를 data.p에서 불러옵니다.
-        
-        파일이 존재하지 않거나 불러오기에 실패할 경우 비어 있는 dict()를 반환합니다.
-        """
-        if os.path.exists(Constants.PATH_DATAP):
-            with open(Constants.PATH_DATAP, 'rb') as f:
-                try:
-                    return pickle.load(f)
-                except EOFError as ex:
-                    warnings.warn("Cannot load data.p. return default. Exception is %s"%ex)
-                    time.sleep(3)
-        return dict()
