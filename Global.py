@@ -1,4 +1,14 @@
-i18n = ["분석자료 만들기","분석자료 읽기",
+"""
+Provides global information that can be accessed from every python module in
+this project. Do not import any custom project modules in this file.
+"""
+
+import datetime
+import csv
+
+i18n = [
+    "분석자료 만들기",
+    "분석자료 읽기",
     "종목 북마크",
     "수익률 상위종목",
     "수익률 하위종목",
@@ -25,11 +35,8 @@ i18n = ["분석자료 만들기","분석자료 읽기",
     "csv 파일 읽기",
     "종목코드 내보내기",
     "북마크 종목 분석하기",
-    "데이터 다운로드"
+    "데이터 다운로드",
 ]
-
-import datetime
-import csv
 
 def generate_new_arrslice(arr: list, arrslice: slice, maxlen: int):
     if len(arr) == maxlen:

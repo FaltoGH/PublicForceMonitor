@@ -135,6 +135,7 @@ class MainWindow(QMainWindow):
         # sys.exit()
         print("Main window is closed.")
 
+
 class CentralWidget(QWidget):
     def __init__(self, mainwindow: MainWindow):
         super().__init__(mainwindow)
@@ -425,15 +426,17 @@ class CentralWidget(QWidget):
             self.scoreboard2list(
                 sorted(list(scoreboard.items()), key=lambda x: x[1], reverse=1)
             )
-    
+
     def download(self) -> None:
         """
         데이터를 다운받아 data.p에 피클 형태로 저장합니다.
         """
         self.mainwindow.statusbar.showMessage("Downloading data from server...")
-        urllib.request.urlretrieve("http://api.motrader.co.kr:25565/data.zip", "data.zip")
+        urllib.request.urlretrieve(
+            "http://api.motrader.co.kr:25565/data.zip", "data.zip"
+        )
         self.mainwindow.statusbar.showMessage("Download done! Extracting zip file...")
-        
+
         with zipfile.ZipFile("data.zip") as f:
             f.extract("data.p")
 
@@ -446,11 +449,7 @@ class CentralWidget(QWidget):
         self.setEnabled(True)
 
     def qpb_datafromkiwoom_clicked(self):
-        reply = QMessageBox.question(
-            self,
-            i18n[28],
-            "새로운 데이터를 받을까요?"
-        )
+        reply = QMessageBox.question(self, i18n[28], "새로운 데이터를 받을까요?")
         if reply == QMessageBox.Yes:
             self.setEnabled(False)
             Thread(target=self.download, daemon=True).start()
@@ -491,6 +490,7 @@ class CentralWidget(QWidget):
 
         self.setEnabled(True)
         QMessageBox.information(self, "", "새로운 분석 데이터를 생성했습니다.")
+        self.mainwindow.statusbar.showMessage("분석 데이터 생성 완료")
 
     def q_investor_clicked(self):
         for i, x in enumerate(self.q_investor):
@@ -1075,47 +1075,31 @@ class CentralWidget(QWidget):
         scoreboard = sorted(scoreboard.items(), key=lambda x: x[1], reverse=1)
         self.scoreboard2list(scoreboard)
 
-    def qpb_expensivestocks_clicked(self):  # particular stocks
+    def qpb_expensivestocks_clicked(self) -> None:  # particular stocks
         """
         검색 기간의 마지막 날에 대해서,
         개인투자자, 외국인투자자, 기관계의 각 평균매수단가 중 가장 비싼 값보다
-        그 날의 종가가 더 비싼 주식.
+        그 날의 종가가 더 비싼 주식들을 결과 창에 표시한다.
         """
-
         scoreboard = {}
         for code in self.atad.keys():
-
             try:
                 arrslice = generate_new_arrslice(
-                    self.data[code][Constants.K_CHART], self.arrslice, self.maxlen
+                    self.data[code][4], self.arrslice, self.maxlen
                 )
-
-                avg_trade_price = self.atad[code][Constants.L_AVG_TRADE_PRICE]
                 maxAvgTradePrc = 0
-                for i in (
-                    Constants.IvstIdx.PERSON,
-                    Constants.IvstIdx.FORIENGER,
-                    Constants.IvstIdx.ORG,
-                ):
+                for i in (0, 1, 2):
                     maxAvgTradePrc = max(
-                        maxAvgTradePrc, avg_trade_price[i][0][arrslice][-1]
+                        maxAvgTradePrc, self.atad[code][0][i][0][arrslice][-1]
                     )
-
-                lastPrc = list(self.data[code][Constants.K_CHART].values())[arrslice][
-                    -1
-                ][Constants.IDX_81_CLOSE]
-
+                lastPrc = list(self.data[code][4].values())[arrslice][-1][0]
             except IndexError as e:
                 print(code, e, end="\r")
                 continue
-
-            if (lastPrc > maxAvgTradePrc) and (maxAvgTradePrc > 0):
-                score = (lastPrc / maxAvgTradePrc - 1) * 100
-                scoreboard[code] = score
-
+            if lastPrc > maxAvgTradePrc > 0:
+                scoreboard[code] = (lastPrc / maxAvgTradePrc - 1) * 100
         self.qcb_autobookmark_check_or_not(scoreboard)
-
-        scoreboard = sorted(scoreboard.items(), key=lambda x: x[1], reverse=1)
+        scoreboard = sorted(scoreboard.items(), key=lambda x: x[1], reverse=True)
         self.scoreboard2list(scoreboard)
 
     def qpb_cheapstocks_clicked(self):
