@@ -1,7 +1,20 @@
 import math
+import typing
 
 from Global import i18n
 from RightPushButton import RightPushButton
+
+
+def _index(lis: list, value: typing.Any) -> int:
+    """
+    Return first index of value.
+
+    Returns -1 if the value is not present.
+    """
+    try:
+        return lis.index(value)
+    except ValueError:
+        return -1
 
 
 class VolumeButton(RightPushButton):
@@ -36,18 +49,13 @@ class VolumeButton(RightPushButton):
                     todayv = listVolume[-1]
                     listVolume.sort(reverse=self.mode == 1)
                     top = listVolume[:3]
-                    if self.mode == 1:
-                        if todayv >= top[-1]:
-                            ranking = top.index(todayv)#0,1,2
-                            log10todayv = math.log(todayv, 10)
-                            score = ranking + (1 - log10todayv / 10)
-                            scoreboard[code] = score
-                    else:
-                        if todayv <= top[-1]:
-                            ranking = top.index(todayv)#0,1,2
-                            log10todayv = math.log(todayv, 10)
-                            score = ranking + log10todayv / 10
-                            scoreboard[code] = score
+                    ranking = _index(top, todayv)  # -1,0,1,2
+                    if ranking >= 0:
+                        scoreboard[code] = ranking + (
+                            1 - math.log10(todayv) / 10
+                            if self.mode == 1
+                            else math.log10(todayv) / 10
+                        )
         self.centralwidget.qcb_autobookmark_check_or_not(scoreboard)
         scoreboard = sorted(scoreboard.items(), key=lambda x: x[1])
         self.centralwidget.scoreboard2list(scoreboard)
