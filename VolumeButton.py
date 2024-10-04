@@ -1,6 +1,5 @@
 import math
 
-from Constants import Constants
 from Global import i18n
 from RightPushButton import RightPushButton
 
@@ -9,6 +8,8 @@ class VolumeButton(RightPushButton):
     def __init__(self, centralwidget):
         super().__init__()
         self.centralwidget = centralwidget
+        self.mode = 1
+        """1: Big volume, 0: Small volume"""
         self.mode1()
 
     def mode1(self):
@@ -24,45 +25,30 @@ class VolumeButton(RightPushButton):
         self.mode = 0
 
     def _clicked(self):
-        mode = self.mode
-
         scoreboard = {}
-
         for code in self.centralwidget.data:
-            chartrows = list(self.centralwidget.data[code][4].values())
-            arrslice = self.centralwidget.get_slice_for_code(code)
-            chartrows = chartrows[arrslice]
-            if chartrows[-1][1] == 0:
-                continue
-            if len(chartrows) < 10:
-                continue
-            arrv = []
-            for chartrow in chartrows:
-                v = chartrow[1]
-                if v > 0:
-                    arrv.append(v)
-            if len(arrv) < 5:
-                continue
-            todayv = arrv[-1]
-            arrv.sort(reverse=mode==1)
-            top = arrv[:3]
-            if mode == 1:
-                if todayv < top[-1]:
-                    continue
-                ranking = top.index(todayv)
-                log10todayv = math.log(todayv, 10)
-                score = ranking + (1 - log10todayv / 10)
-                scoreboard[code] = score
-            else:
-                if todayv > top[-1]:
-                    continue
-                ranking = top.index(todayv)
-                log10todayv = math.log(todayv, 10)
-                score = ranking + log10todayv / 10
-                scoreboard[code] = score
-
+            chartrows = list(self.centralwidget.data[code][4].values())[
+                self.centralwidget.get_slice_for_code(code)
+            ]
+            if len(chartrows) >= 10 and chartrows[-1][1] > 0:
+                listVolume = [x[1] for x in chartrows if x[1] > 0]
+                if len(listVolume) >= 5:
+                    todayv = listVolume[-1]
+                    listVolume.sort(reverse=self.mode == 1)
+                    top = listVolume[:3]
+                    if self.mode == 1:
+                        if todayv >= top[-1]:
+                            ranking = top.index(todayv)#0,1,2
+                            log10todayv = math.log(todayv, 10)
+                            score = ranking + (1 - log10todayv / 10)
+                            scoreboard[code] = score
+                    else:
+                        if todayv <= top[-1]:
+                            ranking = top.index(todayv)#0,1,2
+                            log10todayv = math.log(todayv, 10)
+                            score = ranking + log10todayv / 10
+                            scoreboard[code] = score
         self.centralwidget.qcb_autobookmark_check_or_not(scoreboard)
-
         scoreboard = sorted(scoreboard.items(), key=lambda x: x[1])
         self.centralwidget.scoreboard2list(scoreboard)
 
