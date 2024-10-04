@@ -1332,39 +1332,21 @@ class CentralWidget(QWidget):
 
     def qpb_redredred_clicked(self):
         scoreboard = {}
-        investor = self.investor
-
         for key in self.atad.keys():
             arrslice = self.get_slice_for_code(key)
-            array = self.atad[key][2][investor][arrslice]
-            directionarray = self.atad[key][3][investor][arrslice]
-            if self.qpb_redredred.mode == 0:
-                red = 0
-                others = 0
-                for i in range(len(directionarray)):
-                    value = directionarray[i]
-                    if value == 100:
-                        red += array[i]
-                    # else:
-                    #     others += array[i]
-                score = red  # / (others + 1)
-            else:
-                blue = 0
-                others = 0
-                for i in range(len(directionarray)):
-                    value = directionarray[i]
-                    if value == -100:
-                        blue += array[i]
-                    # else:
-                    #     others += array[i]
-                score = blue  # / (others + 1)
+            lstPower = self.atad[key][2][self.investor][arrslice]
+            lstDirection = self.atad[key][3][self.investor][arrslice]
+            score = 0
+            for i in range(len(lstDirection)):
+                value = lstDirection[i]
+                if value == (-100 if self.qpb_redredred.mode else 100):
+                    score += lstPower[i]
             if score > 3:
                 scoreboard[key] = score
-
         self.qcb_autobookmark_check_or_not(scoreboard)
-
-        scoreboard = sorted(scoreboard.items(), key=lambda x: x[1], reverse=True)
-        self.scoreboard2list(scoreboard)
+        self.scoreboard2list(
+            sorted(scoreboard.items(), key=lambda x: x[1], reverse=True)
+        )
 
     def qpb_save_clicked(self):
         if not self.resultcodelist:
@@ -1420,7 +1402,7 @@ class CentralWidget(QWidget):
                 self, "", f"{nocode}가 데이터에 없으므로 무시되었습니다."
             )
 
-    def scoreboard2list(self, scoreboard: list):
+    def scoreboard2list(self, scoreboard: list[tuple[str, int]]) -> None:
         """
         Display a given scoreboard on QTableWidget.
         Args:
