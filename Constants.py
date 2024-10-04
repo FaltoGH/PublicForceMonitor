@@ -54,18 +54,7 @@ class Constants:
 
     PATH_DATAP = 'data.p'
 
-    AUTO_SAVE_INTERVAL = 49
-    """data.p를 몇 skip되지 않은 데이터 iteration마다 자동 저장할지 정합니다.
-
-    자동 저장을 비활성화하고 싶을 경우 0을 입력하세요.
-
-    2401 ** 0.5 == 49 가 권장 값입니다. 자동 저장 간격을 N의 제곱근으로 잡을 경우
-    자동 저장의 시간 복잡도가 O(N**1.5)가 됩니다.
-    """
-
     PATH_ATADP = 'atad.p'
-
-    WINDOWTITLE = "세력모니터 240922"
 
     VOLUMETOPN = 3
 
