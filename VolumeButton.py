@@ -24,16 +24,13 @@ class VolumeButton(RightPushButton):
         self.mode = 0
 
     def _clicked(self):
-        centralwidget = self.centralwidget
-        data = centralwidget.data
-        arrslice = centralwidget.arrslice
         mode = self.mode
 
         scoreboard = {}
 
-        for code in data:
-            chartrows = list(data[code][4].values())
-            arrslice = centralwidget.get_slice_for_code(code)
+        for code in self.centralwidget.data:
+            chartrows = list(self.centralwidget.data[code][4].values())
+            arrslice = self.centralwidget.get_slice_for_code(code)
             chartrows = chartrows[arrslice]
             if chartrows[-1][1] == 0:
                 continue
@@ -47,9 +44,9 @@ class VolumeButton(RightPushButton):
             if len(arrv) < 5:
                 continue
             todayv = arrv[-1]
+            arrv.sort(reverse=mode==1)
+            top = arrv[:3]
             if mode == 1:
-                arrv.sort(reverse=True)
-                top = arrv[:3]
                 if todayv < top[-1]:
                     continue
                 ranking = top.index(todayv)
@@ -57,8 +54,6 @@ class VolumeButton(RightPushButton):
                 score = ranking + (1 - log10todayv / 10)
                 scoreboard[code] = score
             else:
-                arrv.sort()
-                top = arrv[:3]
                 if todayv > top[-1]:
                     continue
                 ranking = top.index(todayv)
@@ -66,10 +61,10 @@ class VolumeButton(RightPushButton):
                 score = ranking + log10todayv / 10
                 scoreboard[code] = score
 
-        centralwidget.qcb_autobookmark_check_or_not(scoreboard)
+        self.centralwidget.qcb_autobookmark_check_or_not(scoreboard)
 
         scoreboard = sorted(scoreboard.items(), key=lambda x: x[1])
-        centralwidget.scoreboard2list(scoreboard)
+        self.centralwidget.scoreboard2list(scoreboard)
 
     def rightclicked(self):
         if self.mode == 0:
